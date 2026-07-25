@@ -1,0 +1,7 @@
+# Intermediate downloads used only to build data/*.json — not needed to serve the site
+raw_verbs.csv
+raw_verbs_fr_list.json
+raw_verbs_fr_templates.json
+
+# Local tooling config
+.claude/

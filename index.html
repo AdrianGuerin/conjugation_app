@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conjuga — Spanish Verb Drill</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Conjuga</h1>
+    <div class="topbar-controls">
+      <a class="lang-switch" href="index.fr.html">🇫🇷 Français</a>
+      <label class="strict-toggle">
+        <input type="checkbox" id="includeVosotros">
+        Include vosotros
+      </label>
+      <label class="strict-toggle">
+        <input type="checkbox" id="strictAccents">
+        Strict accents
+      </label>
+      <span id="streak" class="streak" title="Current correct streak">🔥 0</span>
+    </div>
+  </header>
+
+  <main id="app">
+    <div class="stage">
+      <div class="session-header">
+        <div id="feedback" class="feedback hidden"></div>
+        <div class="header-main">
+          <span id="headerVerb"></span>
+          <span class="header-dot">·</span>
+          <span id="headerPronoun"></span>
+        </div>
+        <div id="headerEnglish" class="header-english muted"></div>
+      </div>
+
+      <div class="card-wrap">
+        <section id="roundIntro" class="card">
+          <p class="eyebrow">Ready?</p>
+          <button id="startRoundBtn" class="primary">Start drilling</button>
+        </section>
+
+        <section id="drill" class="card hidden">
+          <p class="eyebrow" id="tenseLabel">Presente</p>
+          <form id="answerForm" autocomplete="off">
+            <input id="answerInput" type="text" placeholder="Type the conjugation…" autocomplete="off" autocapitalize="off" spellcheck="false">
+            <button type="submit" class="primary" id="checkBtn">Check</button>
+          </form>
+          <div class="progress-dots" id="progressDots"></div>
+        </section>
+
+        <section id="roundSummary" class="card hidden">
+          <h2>Round complete</h2>
+          <p id="summaryLine" class="muted"></p>
+          <button id="nextRoundBtn" class="primary">Next verb</button>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p class="muted small">Data: Jehle Spanish Verb Database · Progress saved in this browser only</p>
+  </footer>
+
+<script src="app.js"></script>
+</body>
+</html>

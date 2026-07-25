@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conjuga — Spanish Verb Drill (sample)</title>
+<style>
+:root {
+  --bg: #faf7f2;
+  --card: #ffffff;
+  --ink: #2a2420;
+  --muted: #837a70;
+  --accent: #c1502e;
+  --accent-ink: #ffffff;
+  --good: #2f7d4f;
+  --bad: #c1402e;
+  --border: #eae3d8;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(40,30,20,0.06), 0 8px 24px rgba(40,30,20,0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1815;
+    --card: #262019;
+    --ink: #f1ebe2;
+    --muted: #a89a89;
+    --accent: #e08a5c;
+    --accent-ink: #221a12;
+    --good: #6fbf8b;
+    --bad: #e0725c;
+    --border: #3a3128;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.3);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar h1 {
+  font-size: 1.25rem;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.topbar-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.strict-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.lang-switch {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.lang-switch:hover {
+  color: var(--accent);
+}
+
+.streak {
+  font-weight: 600;
+}
+
+main#app {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+@media (max-width: 600px) {
+  main#app {
+    align-items: flex-start;
+    /* Anchoring near the top (instead of vertically centering) means the
+       keyboard shrinking the viewport doesn't re-center everything and
+       cause a jump. The extra top padding leaves room for the feedback
+       banner, which floats above the header. */
+    padding-top: 4.5rem;
+  }
+}
+
+.stage {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.session-header {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+}
+
+.header-main {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.header-dot {
+  color: var(--muted);
+  font-weight: 400;
+  margin: 0 0.35rem;
+}
+
+#headerPronoun {
+  color: var(--accent);
+}
+
+.header-english {
+  font-size: 0.9rem;
+  font-style: italic;
+  margin-top: 0.15rem;
+}
+
+.card-wrap {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 360px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2rem 1.75rem;
+  width: 100%;
+  text-align: center;
+}
+
+.card.enter {
+  animation: card-enter 0.32s ease both;
+}
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0 0 0.25rem;
+}
+
+.card h2 {
+  margin: 0 0 1.25rem;
+  font-size: 2rem;
+}
+
+.muted { color: var(--muted); }
+.small { font-size: 0.8rem; }
+
+button.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  border-radius: 999px;
+  padding: 0.75rem 1.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+
+button.primary:hover { transform: translateY(-1px); }
+button.primary:active { transform: translateY(0); }
+
+#tenseLabel {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0;
+  margin-bottom: 1.5rem;
+}
+
+#answerForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+#answerInput {
+  width: 100%;
+  font-size: 1.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--ink);
+  text-align: center;
+}
+
+#checkBtn {
+  width: 100%;
+}
+
+#answerInput:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.feedback {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+/* Rests translated up by its own height + a 12px gap, so it always clears
+   the header regardless of the header's rendered height. Starts at
+   translateY(0) — flush with (behind) the header, since the header has a
+   higher z-index — then rises to its resting spot above it. */
+.feedback:not(.hidden) {
+  animation: feedback-in 0.32s ease both;
+}
+
+@keyframes feedback-in {
+  from {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(calc(-100% - 12px));
+  }
+}
+
+.feedback.correct {
+  background: color-mix(in srgb, var(--good) 22%, var(--card));
+  color: var(--good);
+}
+
+.feedback.incorrect {
+  background: color-mix(in srgb, var(--bad) 22%, var(--card));
+  color: var(--bad);
+}
+
+.feedback .correction {
+  display: block;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.progress-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 1.5rem;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.dot.done-correct { background: var(--good); }
+.dot.done-incorrect { background: var(--bad); }
+.dot.current { background: var(--accent); }
+
+.hidden { display: none !important; }
+
+footer {
+  text-align: center;
+  padding: 1rem;
+}
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Conjuga</h1>
+    <div class="topbar-controls">
+      <a class="lang-switch" href="index.fr.html">🇫🇷 Français</a>
+      <label class="strict-toggle">
+        <input type="checkbox" id="includeVosotros">
+        Include vosotros
+      </label>
+      <label class="strict-toggle">
+        <input type="checkbox" id="strictAccents">
+        Strict accents
+      </label>
+      <span id="streak" class="streak" title="Current correct streak">🔥 0</span>
+    </div>
+  </header>
+
+  <main id="app">
+    <div class="stage">
+      <div class="session-header">
+        <div id="feedback" class="feedback hidden"></div>
+        <div class="header-main">
+          <span id="headerVerb"></span>
+          <span class="header-dot">·</span>
+          <span id="headerPronoun"></span>
+        </div>
+        <div id="headerEnglish" class="header-english muted"></div>
+      </div>
+
+      <div class="card-wrap">
+        <section id="roundIntro" class="card">
+          <p class="eyebrow">Ready?</p>
+          <button id="startRoundBtn" class="primary">Start drilling</button>
+        </section>
+
+        <section id="drill" class="card hidden">
+          <p class="eyebrow" id="tenseLabel">Presente</p>
+          <form id="answerForm" autocomplete="off">
+            <input id="answerInput" type="text" placeholder="Type the conjugation…" autocomplete="off" autocapitalize="off" spellcheck="false">
+            <button type="submit" class="primary" id="checkBtn">Check</button>
+          </form>
+          <div class="progress-dots" id="progressDots"></div>
+        </section>
+
+        <section id="roundSummary" class="card hidden">
+          <h2>Round complete</h2>
+          <p id="summaryLine" class="muted"></p>
+          <button id="nextRoundBtn" class="primary">Next verb</button>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p class="muted small">Data: Jehle Spanish Verb Database · Progress saved in this browser only</p>
+  </footer>
+
+<script>
+window.EMBEDDED_VERB_DATA = {"generatedFrom":"fred-jehle-spanish-verbs (sample)","verbs":[{"infinitive":"ser","english":"to be","gerund":"siendo","participle":"sido","forms":{"Indicativo":{"Presente":{"1s":"soy","2s":"eres","3s":"es","1p":"somos","2p":"sois","3p":"son"},"Pretérito":{"1s":"fui","2s":"fuiste","3s":"fue","1p":"fuimos","2p":"fuisteis","3p":"fueron"},"Imperfecto":{"1s":"era","2s":"eras","3s":"era","1p":"éramos","2p":"erais","3p":"eran"},"Futuro":{"1s":"seré","2s":"serás","3s":"será","1p":"seremos","2p":"seréis","3p":"serán"},"Condicional":{"1s":"sería","2s":"serías","3s":"sería","1p":"seríamos","2p":"seríais","3p":"serían"}}}},{"infinitive":"estar","english":"to be","gerund":"estando","participle":"estado","forms":{"Indicativo":{"Presente":{"1s":"estoy","2s":"estás","3s":"está","1p":"estamos","2p":"estáis","3p":"están"},"Pretérito":{"1s":"estuve","2s":"estuviste","3s":"estuvo","1p":"estuvimos","2p":"estuvisteis","3p":"estuvieron"},"Imperfecto":{"1s":"estaba","2s":"estabas","3s":"estaba","1p":"estábamos","2p":"estabais","3p":"estaban"},"Futuro":{"1s":"estaré","2s":"estarás","3s":"estará","1p":"estaremos","2p":"estaréis","3p":"estarán"},"Condicional":{"1s":"estaría","2s":"estarías","3s":"estaría","1p":"estaríamos","2p":"estaríais","3p":"estarían"}}}},{"infinitive":"tener","english":"to have","gerund":"teniendo","participle":"tenido","forms":{"Indicativo":{"Presente":{"1s":"tengo","2s":"tienes","3s":"tiene","1p":"tenemos","2p":"tenéis","3p":"tienen"},"Pretérito":{"1s":"tuve","2s":"tuviste","3s":"tuvo","1p":"tuvimos","2p":"tuvisteis","3p":"tuvieron"},"Imperfecto":{"1s":"tenía","2s":"tenías","3s":"tenía","1p":"teníamos","2p":"teníais","3p":"tenían"},"Futuro":{"1s":"tendré","2s":"tendrás","3s":"tendrá","1p":"tendremos","2p":"tendréis","3p":"tendrán"},"Condicional":{"1s":"tendría","2s":"tendrías","3s":"tendría","1p":"tendríamos","2p":"tendríais","3p":"tendrían"}}}},{"infinitive":"hacer","english":"to do, make","gerund":"haciendo","participle":"hecho","forms":{"Indicativo":{"Presente":{"1s":"hago","2s":"haces","3s":"hace","1p":"hacemos","2p":"hacéis","3p":"hacen"},"Pretérito":{"1s":"hice","2s":"hiciste","3s":"hizo","1p":"hicimos","2p":"hicisteis","3p":"hicieron"},"Imperfecto":{"1s":"hacía","2s":"hacías","3s":"hacía","1p":"hacíamos","2p":"hacíais","3p":"hacían"},"Futuro":{"1s":"haré","2s":"harás","3s":"hará","1p":"haremos","2p":"haréis","3p":"harán"},"Condicional":{"1s":"haría","2s":"harías","3s":"haría","1p":"haríamos","2p":"haríais","3p":"harían"}}}},{"infinitive":"ir","english":"to go","gerund":"yendo","participle":"ido","forms":{"Indicativo":{"Presente":{"1s":"voy","2s":"vas","3s":"va","1p":"vamos","2p":"vais","3p":"van"},"Pretérito":{"1s":"fui","2s":"fuiste","3s":"fue","1p":"fuimos","2p":"fuisteis","3p":"fueron"},"Imperfecto":{"1s":"iba","2s":"ibas","3s":"iba","1p":"íbamos","2p":"ibais","3p":"iban"},"Futuro":{"1s":"iré","2s":"irás","3s":"irá","1p":"iremos","2p":"iréis","3p":"irán"},"Condicional":{"1s":"iría","2s":"irías","3s":"iría","1p":"iríamos","2p":"iríais","3p":"irían"}}}},{"infinitive":"poder","english":"to be able, can","gerund":"pudiendo","participle":"podido","forms":{"Indicativo":{"Presente":{"1s":"puedo","2s":"puedes","3s":"puede","1p":"podemos","2p":"podéis","3p":"pueden"},"Pretérito":{"1s":"pude","2s":"pudiste","3s":"pudo","1p":"pudimos","2p":"pudisteis","3p":"pudieron"},"Imperfecto":{"1s":"podía","2s":"podías","3s":"podía","1p":"podíamos","2p":"podíais","3p":"podían"},"Futuro":{"1s":"podré","2s":"podrás","3s":"podrá","1p":"podremos","2p":"podréis","3p":"podrán"},"Condicional":{"1s":"podría","2s":"podrías","3s":"podría","1p":"podríamos","2p":"podríais","3p":"podrían"}}}},{"infinitive":"decir","english":"to say, tell","gerund":"diciendo","participle":"dicho","forms":{"Indicativo":{"Presente":{"1s":"digo","2s":"dices","3s":"dice","1p":"decimos","2p":"decís","3p":"dicen"},"Pretérito":{"1s":"dije","2s":"dijiste","3s":"dijo","1p":"dijimos","2p":"dijisteis","3p":"dijeron"},"Imperfecto":{"1s":"decía","2s":"decías","3s":"decía","1p":"decíamos","2p":"decíais","3p":"decían"},"Futuro":{"1s":"diré","2s":"dirás","3s":"dirá","1p":"diremos","2p":"diréis","3p":"dirán"},"Condicional":{"1s":"diría","2s":"dirías","3s":"diría","1p":"diríamos","2p":"diríais","3p":"dirían"}}}},{"infinitive":"querer","english":"to want, love","gerund":"queriendo","participle":"querido","forms":{"Indicativo":{"Presente":{"1s":"quiero","2s":"quieres","3s":"quiere","1p":"queremos","2p":"queréis","3p":"quieren"},"Pretérito":{"1s":"quise","2s":"quisiste","3s":"quiso","1p":"quisimos","2p":"quisisteis","3p":"quisieron"},"Imperfecto":{"1s":"quería","2s":"querías","3s":"quería","1p":"queríamos","2p":"queríais","3p":"querían"},"Futuro":{"1s":"querré","2s":"querrás","3s":"querrá","1p":"querremos","2p":"querréis","3p":"querrán"},"Condicional":{"1s":"querría","2s":"querrías","3s":"querría","1p":"querríamos","2p":"querríais","3p":"querrían"}}}},{"infinitive":"hablar","english":"to speak","gerund":"hablando","participle":"hablado","forms":{"Indicativo":{"Presente":{"1s":"hablo","2s":"hablas","3s":"habla","1p":"hablamos","2p":"habláis","3p":"hablan"},"Pretérito":{"1s":"hablé","2s":"hablaste","3s":"habló","1p":"hablamos","2p":"hablasteis","3p":"hablaron"},"Imperfecto":{"1s":"hablaba","2s":"hablabas","3s":"hablaba","1p":"hablábamos","2p":"hablabais","3p":"hablaban"},"Futuro":{"1s":"hablaré","2s":"hablarás","3s":"hablará","1p":"hablaremos","2p":"hablaréis","3p":"hablarán"},"Condicional":{"1s":"hablaría","2s":"hablarías","3s":"hablaría","1p":"hablaríamos","2p":"hablaríais","3p":"hablarían"}}}},{"infinitive":"comer","english":"to eat","gerund":"comiendo","participle":"comido","forms":{"Indicativo":{"Presente":{"1s":"como","2s":"comes","3s":"come","1p":"comemos","2p":"coméis","3p":"comen"},"Pretérito":{"1s":"comí","2s":"comiste","3s":"comió","1p":"comimos","2p":"comisteis","3p":"comieron"},"Imperfecto":{"1s":"comía","2s":"comías","3s":"comía","1p":"comíamos","2p":"comíais","3p":"comían"},"Futuro":{"1s":"comeré","2s":"comerás","3s":"comerá","1p":"comeremos","2p":"comeréis","3p":"comerán"},"Condicional":{"1s":"comería","2s":"comerías","3s":"comería","1p":"comeríamos","2p":"comeríais","3p":"comerían"}}}},{"infinitive":"vivir","english":"to live","gerund":"viviendo","participle":"vivido","forms":{"Indicativo":{"Presente":{"1s":"vivo","2s":"vives","3s":"vive","1p":"vivimos","2p":"vivís","3p":"viven"},"Pretérito":{"1s":"viví","2s":"viviste","3s":"vivió","1p":"vivimos","2p":"vivisteis","3p":"vivieron"},"Imperfecto":{"1s":"vivía","2s":"vivías","3s":"vivía","1p":"vivíamos","2p":"vivíais","3p":"vivían"},"Futuro":{"1s":"viviré","2s":"vivirás","3s":"vivirá","1p":"viviremos","2p":"viviréis","3p":"vivirán"},"Condicional":{"1s":"viviría","2s":"vivirías","3s":"viviría","1p":"viviríamos","2p":"viviríais","3p":"vivirían"}}}},{"infinitive":"ver","english":"to see","gerund":"viendo","participle":"visto","forms":{"Indicativo":{"Presente":{"1s":"veo","2s":"ves","3s":"ve","1p":"vemos","2p":"veis","3p":"ven"},"Pretérito":{"1s":"vi","2s":"viste","3s":"vio","1p":"vimos","2p":"visteis","3p":"vieron"},"Imperfecto":{"1s":"veía","2s":"veías","3s":"veía","1p":"veíamos","2p":"veíais","3p":"veían"},"Futuro":{"1s":"veré","2s":"verás","3s":"verá","1p":"veremos","2p":"veréis","3p":"verán"},"Condicional":{"1s":"vería","2s":"verías","3s":"vería","1p":"veríamos","2p":"veríais","3p":"verían"}}}}]};
+</script>
+<script>
+// Surfaces any uncaught error directly on the page as a visible banner.
+// Without this, a script error on a device we can't attach devtools to
+// (e.g. a phone) just looks like "nothing happens" with no way to diagnose it.
+function showFatalError(message) {
+  let banner = document.getElementById("fatalErrorBanner");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "fatalErrorBanner";
+    banner.style.cssText =
+      "position:fixed;top:0;left:0;right:0;background:#c1402e;color:#fff;" +
+      "padding:0.75rem 1rem;font:13px/1.4 monospace;z-index:9999;white-space:pre-wrap;";
+    document.body.prepend(banner);
+  }
+  banner.textContent = String(message);
+}
+window.addEventListener("error", (e) => {
+  showFatalError(`${e.message} (${(e.filename || "").split("/").pop()}:${e.lineno})`);
+});
+
+const MASTERY_KEY = "conjuga_mastery_v1";
+const STREAK_KEY = "conjuga_streak_v1";
+const STRICT_KEY = "conjuga_strict_v1";
+const VOSOTROS_KEY = "conjuga_vosotros_v1";
+
+// v1 drills the 5 simple indicative tenses only. The data file already holds
+// every mood/tense in the source dataset, so widening this list later is a
+// config change, not a data-pipeline change.
+const ACTIVE_MOOD = "Indicativo";
+const ACTIVE_TENSES = ["Presente", "Pretérito", "Imperfecto", "Futuro", "Condicional"];
+
+// Gerund/participle don't conjugate by pronoun, so they're not part of the
+// per-pronoun forms table — each verb just carries a single string for each,
+// looked up directly off the verb object rather than through ACTIVE_MOOD.
+const EXTRA_FORMS = [
+  { key: "gerund", label: "Gerundio" },
+  { key: "participle", label: "Participio" },
+];
+const TOTAL_STEPS = ACTIVE_TENSES.length + EXTRA_FORMS.length;
+
+const PRONOUNS = [
+  { key: "1s", label: "yo" },
+  { key: "2s", label: "tú" },
+  { key: "3s", label: "él / ella / usted" },
+  { key: "1p", label: "nosotros" },
+  { key: "2p", label: "vosotros" },
+  { key: "3p", label: "ellos / ellas / ustedes" },
+];
+
+// Vowel-accent folding only — ñ is a distinct letter, not a decoration, so it
+// must never fold to "n" even in lenient mode.
+const ACCENT_FOLD = { á: "a", é: "e", í: "i", ó: "o", ú: "u", ü: "u" };
+function foldAccents(s) {
+  return s.replace(/[áéíóúü]/g, (c) => ACCENT_FOLD[c]);
+}
+
+// Some browsers block localStorage entirely on file:// origins (the
+// standalone build is opened by double-clicking, not served), so every
+// access is wrapped rather than left to throw.
+function safeGet(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+function safeSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // progress just won't persist this session
+  }
+}
+
+function loadMastery() {
+  try {
+    return JSON.parse(safeGet(MASTERY_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+function saveMastery(m) {
+  safeSet(MASTERY_KEY, JSON.stringify(m));
+}
+function recordResult(infinitive, correct) {
+  const m = loadMastery();
+  const entry = m[infinitive] || { correct: 0, incorrect: 0 };
+  if (correct) entry.correct++;
+  else entry.incorrect++;
+  m[infinitive] = entry;
+  saveMastery(m);
+}
+
+function getStreak() {
+  return parseInt(safeGet(STREAK_KEY) || "0", 10);
+}
+function setStreak(n) {
+  safeSet(STREAK_KEY, String(n));
+  document.getElementById("streak").textContent = `🔥 ${n}`;
+}
+
+let verbs = [];
+let round = null; // { verb, pronoun, tenseIndex, correctCount }
+let waitingToAdvance = false;
+
+const els = {
+  headerVerb: document.getElementById("headerVerb"),
+  headerPronoun: document.getElementById("headerPronoun"),
+  headerEnglish: document.getElementById("headerEnglish"),
+  startRoundBtn: document.getElementById("startRoundBtn"),
+  roundIntro: document.getElementById("roundIntro"),
+  drill: document.getElementById("drill"),
+  tenseLabel: document.getElementById("tenseLabel"),
+  answerForm: document.getElementById("answerForm"),
+  answerInput: document.getElementById("answerInput"),
+  feedback: document.getElementById("feedback"),
+  progressDots: document.getElementById("progressDots"),
+  roundSummary: document.getElementById("roundSummary"),
+  summaryLine: document.getElementById("summaryLine"),
+  nextRoundBtn: document.getElementById("nextRoundBtn"),
+  strictAccents: document.getElementById("strictAccents"),
+  includeVosotros: document.getElementById("includeVosotros"),
+  checkBtn: document.getElementById("checkBtn"),
+};
+
+function pickWeightedVerb(excludeInfinitive) {
+  const mastery = loadMastery();
+  const weights = verbs.map((v) => {
+    const m = mastery[v.infinitive] || { correct: 0, incorrect: 0 };
+    const total = m.correct + m.incorrect;
+    const errorRate = total ? m.incorrect / total : 0.5;
+    let w = 1 + errorRate * 4;
+    if (v.infinitive === excludeInfinitive) w *= 0.15;
+    return w;
+  });
+  const totalWeight = weights.reduce((a, b) => a + b, 0);
+  let r = Math.random() * totalWeight;
+  for (let i = 0; i < verbs.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return verbs[i];
+  }
+  return verbs[verbs.length - 1];
+}
+
+function pickPronoun() {
+  const pool = els.includeVosotros.checked ? PRONOUNS : PRONOUNS.filter((p) => p.key !== "2p");
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function prepareRound() {
+  const prevVerb = round ? round.verb.infinitive : null;
+  const verb = pickWeightedVerb(prevVerb);
+  const pronoun = pickPronoun();
+  round = { verb, pronoun, tenseIndex: 0, correctCount: 0 };
+
+  els.headerVerb.textContent = verb.infinitive;
+  els.headerPronoun.textContent = pronoun.label;
+  els.headerEnglish.textContent = verb.english;
+
+  els.roundSummary.classList.add("hidden");
+  els.drill.classList.add("hidden");
+  els.roundIntro.classList.remove("hidden");
+  playEnter(els.roundIntro);
+}
+
+function playEnter(el) {
+  el.classList.remove("enter");
+  void el.offsetWidth; // restart the CSS animation
+  el.classList.add("enter");
+}
+
+function buildDots() {
+  els.progressDots.innerHTML = "";
+  for (let i = 0; i < TOTAL_STEPS; i++) {
+    const dot = document.createElement("span");
+    dot.className = "dot";
+    els.progressDots.appendChild(dot);
+  }
+}
+
+function updateDot(index, state) {
+  const dot = els.progressDots.children[index];
+  dot.classList.remove("current", "done-correct", "done-incorrect");
+  dot.classList.add(state);
+}
+
+function startRound() {
+  els.roundIntro.classList.add("hidden");
+  els.drill.classList.remove("hidden");
+  buildDots();
+  showCurrentTense();
+  playEnter(els.drill);
+}
+
+function showCurrentTense() {
+  const idx = round.tenseIndex;
+  els.tenseLabel.textContent =
+    idx < ACTIVE_TENSES.length ? ACTIVE_TENSES[idx] : EXTRA_FORMS[idx - ACTIVE_TENSES.length].label;
+  els.feedback.classList.add("hidden");
+  els.feedback.innerHTML = "";
+  els.answerInput.value = "";
+  els.answerInput.readOnly = false;
+  els.answerInput.focus();
+  els.checkBtn.textContent = "Check";
+  updateDot(round.tenseIndex, "current");
+  waitingToAdvance = false;
+}
+
+function checkAnswer(userInput, correctForm, strict) {
+  const rawUser = userInput.trim().toLowerCase();
+  const rawCorrect = correctForm.trim().toLowerCase();
+  if (rawUser === rawCorrect) return { correct: true, accentPerfect: true };
+  if (strict) return { correct: false, accentPerfect: false };
+  if (foldAccents(rawUser) === foldAccents(rawCorrect)) {
+    return { correct: true, accentPerfect: false };
+  }
+  return { correct: false, accentPerfect: false };
+}
+
+function submitAnswer() {
+  const idx = round.tenseIndex;
+  const isExtra = idx >= ACTIVE_TENSES.length;
+  const correctForm = isExtra
+    ? round.verb[EXTRA_FORMS[idx - ACTIVE_TENSES.length].key]
+    : round.verb.forms[ACTIVE_MOOD][ACTIVE_TENSES[idx]][round.pronoun.key];
+  const strict = els.strictAccents.checked;
+  const result = checkAnswer(els.answerInput.value, correctForm, strict);
+
+  recordResult(round.verb.infinitive, result.correct);
+  setStreak(result.correct ? getStreak() + 1 : 0);
+
+  els.feedback.classList.remove("hidden", "correct", "incorrect");
+  if (result.correct && result.accentPerfect) {
+    els.feedback.classList.add("correct");
+    els.feedback.textContent = "¡Correcto!";
+  } else if (result.correct) {
+    els.feedback.classList.add("correct");
+    els.feedback.innerHTML = `¡Correcto! <span class="correction">Watch the accent: ${correctForm}</span>`;
+  } else {
+    els.feedback.classList.add("incorrect");
+    const hint = isExtra ? correctForm : `${round.pronoun.label} → ${correctForm}`;
+    els.feedback.innerHTML = `Not quite <span class="correction">${hint}</span>`;
+  }
+
+  updateDot(idx, result.correct ? "done-correct" : "done-incorrect");
+  if (result.correct) round.correctCount++;
+
+  els.answerInput.readOnly = true;
+  const isLast = idx >= TOTAL_STEPS - 1;
+  els.checkBtn.textContent = isLast ? "See results" : "Next tense →";
+  waitingToAdvance = true;
+}
+
+function advance() {
+  round.tenseIndex++;
+  if (round.tenseIndex >= TOTAL_STEPS) {
+    finishRound();
+  } else {
+    showCurrentTense();
+  }
+}
+
+function finishRound() {
+  els.drill.classList.add("hidden");
+  els.roundSummary.classList.remove("hidden");
+  els.summaryLine.textContent = `${round.correctCount} / ${TOTAL_STEPS} correct for "${round.verb.infinitive}"`;
+  playEnter(els.roundSummary);
+}
+
+els.startRoundBtn.addEventListener("click", startRound);
+els.nextRoundBtn.addEventListener("click", () => {
+  prepareRound();
+});
+
+// Neither button lives in a form, so Enter doesn't reach them by default.
+// preventDefault() here also stops a focused button's own native Enter->click
+// from firing a second time on top of this (the exact double-fire bug the
+// drill screen's Enter handling had earlier).
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  if (!els.roundIntro.classList.contains("hidden")) {
+    e.preventDefault();
+    startRound();
+  } else if (!els.roundSummary.classList.contains("hidden")) {
+    e.preventDefault();
+    prepareRound();
+  }
+});
+
+els.answerForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (waitingToAdvance) {
+    advance();
+  } else {
+    submitAnswer();
+  }
+});
+
+els.strictAccents.addEventListener("change", () => {
+  safeSet(STRICT_KEY, els.strictAccents.checked ? "1" : "0");
+});
+
+els.includeVosotros.addEventListener("change", () => {
+  safeSet(VOSOTROS_KEY, els.includeVosotros.checked ? "1" : "0");
+});
+
+function initWithData(data) {
+  verbs = data.verbs;
+  els.strictAccents.checked = safeGet(STRICT_KEY) === "1";
+  els.includeVosotros.checked = safeGet(VOSOTROS_KEY) === "1";
+  setStreak(getStreak());
+  prepareRound();
+}
+
+// The standalone build sets window.EMBEDDED_VERB_DATA before this script
+// runs, so it never needs fetch (which fails outright on file:// origins).
+if (window.EMBEDDED_VERB_DATA) {
+  initWithData(window.EMBEDDED_VERB_DATA);
+} else {
+  fetch("data/verbs.json")
+    .then((r) => r.json())
+    .then(initWithData)
+    .catch((err) => {
+      showFatalError("Couldn't load verb data: " + err.message);
+      console.error(err);
+    });
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+:root {
+  --bg: #faf7f2;
+  --card: #ffffff;
+  --ink: #2a2420;
+  --muted: #837a70;
+  --accent: #c1502e;
+  --accent-ink: #ffffff;
+  --good: #2f7d4f;
+  --bad: #c1402e;
+  --border: #eae3d8;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(40,30,20,0.06), 0 8px 24px rgba(40,30,20,0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1815;
+    --card: #262019;
+    --ink: #f1ebe2;
+    --muted: #a89a89;
+    --accent: #e08a5c;
+    --accent-ink: #221a12;
+    --good: #6fbf8b;
+    --bad: #e0725c;
+    --border: #3a3128;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.3);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar h1 {
+  font-size: 1.25rem;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.topbar-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.strict-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.lang-switch {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.lang-switch:hover {
+  color: var(--accent);
+}
+
+.streak {
+  font-weight: 600;
+}
+
+main#app {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+@media (max-width: 600px) {
+  main#app {
+    align-items: flex-start;
+    /* Anchoring near the top (instead of vertically centering) means the
+       keyboard shrinking the viewport doesn't re-center everything and
+       cause a jump. The extra top padding leaves room for the feedback
+       banner, which floats above the header. */
+    padding-top: 4.5rem;
+  }
+}
+
+.stage {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.session-header {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+}
+
+.header-main {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.header-dot {
+  color: var(--muted);
+  font-weight: 400;
+  margin: 0 0.35rem;
+}
+
+#headerPronoun {
+  color: var(--accent);
+}
+
+.header-english {
+  font-size: 0.9rem;
+  font-style: italic;
+  margin-top: 0.15rem;
+}
+
+.card-wrap {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 360px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2rem 1.75rem;
+  width: 100%;
+  text-align: center;
+}
+
+.card.enter {
+  animation: card-enter 0.32s ease both;
+}
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0 0 0.25rem;
+}
+
+.card h2 {
+  margin: 0 0 1.25rem;
+  font-size: 2rem;
+}
+
+.muted { color: var(--muted); }
+.small { font-size: 0.8rem; }
+
+button.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  border-radius: 999px;
+  padding: 0.75rem 1.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+
+button.primary:hover { transform: translateY(-1px); }
+button.primary:active { transform: translateY(0); }
+
+#tenseLabel {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0;
+  margin-bottom: 1.5rem;
+}
+
+#answerForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+#answerInput {
+  width: 100%;
+  font-size: 1.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--ink);
+  text-align: center;
+}
+
+#checkBtn {
+  width: 100%;
+}
+
+#answerInput:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.feedback {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+/* Rests translated up by its own height + a 12px gap, so it always clears
+   the header regardless of the header's rendered height. Starts at
+   translateY(0) — flush with (behind) the header, since the header has a
+   higher z-index — then rises to its resting spot above it. */
+.feedback:not(.hidden) {
+  animation: feedback-in 0.32s ease both;
+}
+
+@keyframes feedback-in {
+  from {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(calc(-100% - 12px));
+  }
+}
+
+.feedback.correct {
+  background: color-mix(in srgb, var(--good) 22%, var(--card));
+  color: var(--good);
+}
+
+.feedback.incorrect {
+  background: color-mix(in srgb, var(--bad) 22%, var(--card));
+  color: var(--bad);
+}
+
+.feedback .correction {
+  display: block;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.progress-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 1.5rem;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.dot.done-correct { background: var(--good); }
+.dot.done-incorrect { background: var(--bad); }
+.dot.current { background: var(--accent); }
+
+.hidden { display: none !important; }
+
+footer {
+  text-align: center;
+  padding: 1rem;
+}
