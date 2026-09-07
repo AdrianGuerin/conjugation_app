@@ -6,6 +6,8 @@ raw_verbs_it_list.xml
 raw_verbs_it_templates.xml
 raw_verbs_it_leffi_lexemes.csv
 raw_verbs_fr_lefff.json
+raw_verbs_es_freq.txt
+raw_verbs_fr_freq.txt
 data/morphit/morph-it_048.txt
 
 # Local tooling config

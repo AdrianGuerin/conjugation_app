@@ -25,6 +25,7 @@ $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
 $outPath = Join-Path $root "data\verbs.french.json"
+$freqPath = Join-Path $root "raw_verbs_fr_freq.txt"
 
 $verbsFr = Get-Content -Raw -Path (Join-Path $root "raw_verbs_fr_list.json") -Encoding UTF8 | ConvertFrom-Json
 $conjFr = Get-Content -Raw -Path (Join-Path $root "raw_verbs_fr_templates.json") -Encoding UTF8 | ConvertFrom-Json
@@ -271,23 +272,93 @@ $script:AUX_PRESENT = @{
   "etre" = Get-PresentTense $etre
 }
 
-$verbsOut = New-Object System.Collections.Generic.List[object]
-$rank = 0
+# Verb *selection* (which 100 verbs) is still hand-curated -- see README.
+# Rank is not: it comes from summing each verb's actual inflected forms'
+# frequencies in hermitdave/FrequencyWords (OpenSubtitles-derived,
+# CC BY-SA 4.0). That list is raw wordform frequency, not lemma frequency,
+# so every stored form is summed rather than looking up only the bare
+# infinitive (which would understate verbs whose conjugated forms dominate
+# usage far more than the infinitive itself does). See NOTES.md.
+function Get-AllStrings($obj) {
+  $result = New-Object System.Collections.Generic.List[string]
+  if ($obj -is [string]) {
+    if ($obj) { $result.Add($obj) }
+  } elseif ($obj -is [System.Collections.IDictionary]) {
+    # ",$result" prevents PowerShell from unwrapping a single-element list
+    # return value back into a bare string (a well-known footgun here).
+    foreach ($v in $obj.Values) { $result.AddRange((Get-AllStrings $v)) }
+  }
+  return ,$result
+}
+
+$freqTable = @{}
+Get-Content -Encoding UTF8 -Path $freqPath | ForEach-Object {
+  $parts = $_ -split ' '
+  if ($parts.Count -eq 2) { $freqTable[$parts[0]] = [long]$parts[1] }
+}
+
+# Raw wordform frequency (unlike a proper lemma lexicon) can't distinguish
+# homographs shared between different verbs -- summing every form silently
+# credits a verb with another verb's occurrences when they share a spelling.
+# Confirmed case: "suis" is both etre's 1s present ("je suis" = I am, by far
+# the dominant real usage) and suivre's 1s present ("je suis" = I follow),
+# and inflated suivre's rank to #6 -- implausible on its face, which is how
+# this was caught; verified via raw_verbs_fr_freq.txt directly ("suis":
+# 1,303,070 vs ~19,663 for all of suivre's other genuine forms combined).
+# Not a general audit of all 100 verbs for this failure mode -- just this
+# one confirmed instance. See NOTES.md.
+$excludedFormsPerVerb = @{
+  "suivre" = @("suis")
+}
+
+function Get-FrequencySum($infinitive, $forms) {
+  $excluded = $excludedFormsPerVerb[$infinitive]
+  $total = 0L
+  foreach ($f in $forms) {
+    if ($excluded -and ($excluded -contains $f.ToLower())) { continue }
+    if ($freqTable.ContainsKey($f.ToLower())) { $total += $freqTable[$f.ToLower()] }
+  }
+  return $total
+}
+
+$unranked = New-Object System.Collections.Generic.List[object]
 foreach ($infinitive in $verbList.Keys) {
-  $rank++
   $forms = Get-FormsFor $infinitive
-  $verbsOut.Add([ordered]@{
+  $gerund = Get-PresentParticiple $infinitive
+  $participle = Get-Participle $infinitive
+  $allForms = (Get-AllStrings $forms)
+  $allForms.Add($infinitive)
+  $allForms.Add($gerund)
+  $allForms.Add($participle)
+  $unranked.Add([pscustomobject]@{
     infinitive = $infinitive
     english = $verbList[$infinitive]
-    rank = $rank
-    gerund = Get-PresentParticiple $infinitive
-    participle = Get-Participle $infinitive
+    freq = Get-FrequencySum $infinitive $allForms
+    gerund = $gerund
+    participle = $participle
     forms = [ordered]@{ Indicatif = $forms }
+  })
+}
+if (($unranked | Where-Object { $_.freq -eq 0 }).Count -gt 0) {
+  Write-Warning "Zero frequency (no forms found in OpenSubtitles list), ranked last: $(($unranked | Where-Object { $_.freq -eq 0 } | ForEach-Object { $_.infinitive }) -join ', ')"
+}
+
+$verbsOut = New-Object System.Collections.Generic.List[object]
+$rank = 0
+foreach ($v in ($unranked | Sort-Object -Property freq -Descending)) {
+  $rank++
+  $verbsOut.Add([ordered]@{
+    infinitive = $v.infinitive
+    english = $v.english
+    rank = $rank
+    gerund = $v.gerund
+    participle = $v.participle
+    forms = $v.forms
   })
 }
 
 $result = [ordered]@{
-  generatedFrom = "conjugation-fr (Verbiste-derived, GPL-2.0) - forms computed from radical+template rules"
+  generatedFrom = "conjugation-fr (Verbiste-derived, GPL-2.0) - forms computed from radical+template rules; ranked by summed inflected-form frequency from hermitdave/FrequencyWords (OpenSubtitles-derived, CC BY-SA 4.0)"
   verbs = $verbsOut
 }
 

@@ -10,7 +10,8 @@ hand-modified. Written as a reference for future changes, not user-facing.
   English gloss, gerund, past participle, and every mood/tense form for a verb are
   copied as-is from the source rows.
 - 100 of the CSV's ~638 verbs are included, hand-curated (not a frequency corpus — see
-  the "verb selection" note below). `rank` = position in the curated list.
+  the "verb selection" note below). `rank` comes from summed inflected-form frequency
+  (see "Ranking: Spanish and French" below) — no longer just curated-list position.
 - The CSV actually contains many more moods/tenses per verb than the app drills
   (subjunctive, imperative, perfect tenses); `build_data.ps1` captures all of them into
   the JSON even though `app.js` only actively uses 5 tenses + gerund + participle, so
@@ -39,7 +40,8 @@ hand-modified. Written as a reference for future changes, not user-facing.
   element — French doesn't have a distinct machine-readable "gérondif" field. The
   drilled form is labeled "Participe présent" (not "Gérondif") because the stored
   string is the bare participle (parlant), not the "en + participle" adverbial form.
-- 100 verbs, hand-curated. `rank` = position in the curated list.
+- 100 verbs, hand-curated. `rank` comes from summed inflected-form frequency (see
+  "Ranking: Spanish and French" below) — no longer just curated-list position.
 
 ### Verified against Lefff — clean result, unlike Italian
 
@@ -143,9 +145,11 @@ is a separate concern from selection, and is designed so its source can be swapp
 without touching any app logic: whichever `scripts/build_*.ps1` sets `rank`, the
 verb-list-size selector just filters `rank <= N` regardless of how rank was derived.
 
-**Italian now uses this seam for real**: `rank` comes from LeFFI
-(`matteo-pellegrini/LeFFI`, CC BY-SA 4.0) frequency data (COLFIS corpus), not
-hand-curated guessing. Spanish and French still use hand-curated order as rank.
+**All three languages now use this seam for real.** Italian: LeFFI
+(`matteo-pellegrini/LeFFI`, CC BY-SA 4.0) frequency data (COLFIS corpus).
+Spanish and French: summed inflected-form frequency from
+`hermitdave/FrequencyWords` (OpenSubtitles-derived, CC BY-SA 4.0) — see
+"Ranking: Spanish and French" below for why that one works differently.
 
 ### LeFFI: usable for ranking, not for verifying written forms
 
@@ -171,6 +175,62 @@ data, several fairly common (rimanere: 1607, perdere: 1386, decidere: 1331). LeF
 can't supply their *written* forms (see above), but it does confirm they're
 legitimate, sometimes-more-common-than-current-substitutes verbs worth adding back
 in if someone authors their conjugations by hand the way the current 100 were.
+
+**Correction on LeFFI's frequency methodology**: earlier reasoning here wrongly
+implied LeFFI's frequency was comparable to a naive "count the bare infinitive
+string" approach. Checked directly: LeFFI's source, COLFIS, explicitly provides
+both a lemma-frequency table ("lemmario") and a separate surface-form table
+("formario"), and LeFFI's lexeme-to-frequency mapping draws from the lemma table
+— so it was already properly aggregated across all inflected forms, not a literal
+infinitive count. This matters for the section below: it's why Italian's ranking
+never had the problem Spanish/French's does.
+
+### Ranking: Spanish and French
+
+No lemma-level frequency lexicon (COLFIS's counterpart) was found for Spanish or
+French with a confirmed, usable license:
+- **Lexique383** (New, Pallier, Ferrand & Matos — `lexique.org`) does have proper
+  lemma-frequency columns (`freqlemfilms2`/`freqlemlivres`, separate from
+  per-wordform `freqfilms2`/`freqlivres`) — methodologically exactly what was
+  wanted. Freely downloadable, but no explicit machine-readable license was found
+  on the site despite a real search (its actual page content didn't render
+  through available tooling; what did load had no license section). Not used,
+  given this project's consistent practice of not shipping data without a
+  confirmed license, even authoritative/well-established data.
+- The Académie française and Dubois/LVF data evaluated earlier for French have
+  the same no-stated-license problem (see above) and don't have Spanish
+  equivalents evaluated at all.
+
+**Used instead**: `hermitdave/FrequencyWords` (OpenSubtitles-derived, CC BY-SA
+4.0) — `raw_verbs_es_freq.txt` / `raw_verbs_fr_freq.txt`, the `_50k` files
+covering the top 50,000 words per language. Confirmed CC BY-SA 4.0, unlike
+Lexique383.
+
+**This is raw wordform frequency, not lemma frequency** — a real, different
+methodology than Italian's LeFFI/COLFIS source, and it matters: "ser" the bare
+infinitive appears far less often in text than "es"/"fue"/"son" do, so looking up
+only the infinitive would understate genuinely common verbs. `build_data.ps1` and
+`build_french_data.ps1` instead recursively collect *every* string value already
+stored for a verb (all moods/tenses the script captures, not just the 5 the app
+drills, plus gerund/participle) and sum each one's frequency from the wordlist.
+
+**Confirmed real problem with this approach, one instance found and fixed**: raw
+wordform summing can't distinguish homographs between different verbs. "suivre"
+(to follow) initially ranked #6 in French — implausible on its face, which is how
+it was caught. Verified directly: "suis" is 1s present for *both* être ("je suis"
+= I am, overwhelmingly the dominant real usage) and suivre ("je suis" = I follow),
+and contributed 1,303,070 to suivre's sum vs. ~19,663 for all its other genuine
+forms combined. `build_french_data.ps1` now excludes "suis" specifically from
+suivre's sum (`$excludedFormsPerVerb`); suivre reranked to a more plausible #70.
+This was **not** a systematic audit of all 100 verbs × however-many forms for this
+failure mode — just this one confirmed instance, caught because it was extreme
+enough to be visible in a top-20 spot check. Spanish was spot-checked for the same
+pattern on several short high-risk forms (a, es, va, fait-equivalents) without
+finding another case this dramatic, but the same caveat applies: not exhaustive.
+One inherent (not fixable) ambiguity noted in passing: Spanish "fue" is genuinely
+shared between ser and ir (they share preterite conjugation), so both verbs
+legitimately draw from the same occurrences in the source text — this reflects a
+real fact about Spanish, not a data error, and wasn't touched.
 
 ### French: a lookup option exists, evaluated, not switched to
 
