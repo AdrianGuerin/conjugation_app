@@ -783,6 +783,21 @@ els.strictAccents.addEventListener("change", () => {
 
 els.includeVosotros.addEventListener("change", () => {
   safeSet(VOSOTROS_KEY, els.includeVosotros.checked ? "1" : "0");
+  // Unchecking mid-round shouldn't leave a vosotros round active until it
+  // happens to finish naturally -- reroll just the pronoun (same verb) so
+  // the setting takes effect immediately. A finished round (summary showing)
+  // is left alone; "Next verb" already picks fresh anyway.
+  const roundInProgress = round && els.roundSummary.classList.contains("hidden");
+  if (!els.includeVosotros.checked && roundInProgress && round.pronoun.key === "2p") {
+    round.pronoun = pickPronoun();
+    round.tenseIndex = 0;
+    round.correctCount = 0;
+    els.headerPronoun.textContent = round.pronoun.label;
+    if (!els.drill.classList.contains("hidden")) {
+      buildDots();
+      showCurrentTense();
+    }
+  }
 });
 
 els.langSwitch.addEventListener("change", () => {
