@@ -80,7 +80,8 @@ body {
 }
 
 .lang-switch,
-.tier-select {
+.tier-select,
+.options-toggle {
   color: var(--muted);
   background: transparent;
   border: 1px solid var(--border);
@@ -92,9 +93,36 @@ body {
 }
 
 .lang-switch:hover,
-.tier-select:hover {
+.tier-select:hover,
+.options-toggle:hover {
   color: var(--accent);
   border-color: var(--accent);
+}
+
+/* Wrapping the toggle+panel in its own relative container means the panel is
+   absolutely positioned and never affects the topbar's flex layout -- adding
+   or removing toggles inside it (e.g. a future tense-selector) can never
+   shift the language/verb-count controls next to it, which is the whole
+   point of moving these here instead of listing them inline. */
+.options-wrap {
+  position: relative;
+}
+
+.options-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 10;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  min-width: 180px;
 }
 
 .streak {
@@ -349,10 +377,16 @@ footer {
         <option value="50" selected>Top 50 verbs</option>
         <option value="100">Top 100 verbs</option>
       </select>
-      <label class="strict-toggle">
-        <input type="checkbox" id="strictAccents">
-        Strict accents
-      </label>
+      <div class="options-wrap">
+        <button type="button" id="optionsToggle" class="options-toggle" aria-haspopup="true" aria-expanded="false">⚙ Options</button>
+        <div id="optionsPanel" class="options-panel hidden">
+          <label class="strict-toggle">
+            <input type="checkbox" id="strictAccents">
+            Strict accents
+          </label>
+          <!-- Future: tense-selection checkboxes go here. -->
+        </div>
+      </div>
       <span id="streak" class="streak" title="Current correct streak">🔥 0</span>
     </div>
   </header>
@@ -543,7 +577,14 @@ const els = {
   checkBtn: document.getElementById("checkBtn"),
   langSwitch: document.getElementById("langSwitch"),
   verbListSize: document.getElementById("verbListSize"),
+  optionsToggle: document.getElementById("optionsToggle"),
+  optionsPanel: document.getElementById("optionsPanel"),
 };
+
+function closeOptionsPanel() {
+  els.optionsPanel.classList.add("hidden");
+  els.optionsToggle.setAttribute("aria-expanded", "false");
+}
 
 function applyTierSize() {
   const tier = parseInt(els.verbListSize.value, 10) || DEFAULT_TIER;
@@ -703,6 +744,10 @@ els.nextRoundBtn.addEventListener("click", () => {
 // from firing a second time on top of this (the exact double-fire bug the
 // drill screen's Enter handling had earlier).
 document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    closeOptionsPanel();
+    return;
+  }
   if (e.key !== "Enter") return;
   if (!els.roundIntro.classList.contains("hidden")) {
     e.preventDefault();
@@ -710,6 +755,22 @@ document.addEventListener("keydown", (e) => {
   } else if (!els.roundSummary.classList.contains("hidden")) {
     e.preventDefault();
     prepareRound();
+  }
+});
+
+els.optionsToggle.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const isOpen = !els.optionsPanel.classList.contains("hidden");
+  els.optionsPanel.classList.toggle("hidden");
+  els.optionsToggle.setAttribute("aria-expanded", String(!isOpen));
+});
+
+// Click-outside-to-close. Clicks on the toggle button itself are handled by
+// its own listener above (with stopPropagation), so this only ever sees
+// clicks that should close the panel.
+document.addEventListener("click", (e) => {
+  if (!els.optionsPanel.classList.contains("hidden") && !els.optionsPanel.contains(e.target)) {
+    closeOptionsPanel();
   }
 });
 

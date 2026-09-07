@@ -20,10 +20,16 @@
         <option value="50" selected>Top 50 verbs</option>
         <option value="100">Top 100 verbs</option>
       </select>
-      <label class="strict-toggle">
-        <input type="checkbox" id="strictAccents">
-        Strict accents
-      </label>
+      <div class="options-wrap">
+        <button type="button" id="optionsToggle" class="options-toggle" aria-haspopup="true" aria-expanded="false">⚙ Options</button>
+        <div id="optionsPanel" class="options-panel hidden">
+          <label class="strict-toggle">
+            <input type="checkbox" id="strictAccents">
+            Strict accents
+          </label>
+          <!-- Future: tense-selection checkboxes go here. -->
+        </div>
+      </div>
       <span id="streak" class="streak" title="Current correct streak">🔥 0</span>
     </div>
   </header>

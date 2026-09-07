@@ -133,7 +133,14 @@ const els = {
   checkBtn: document.getElementById("checkBtn"),
   langSwitch: document.getElementById("langSwitch"),
   verbListSize: document.getElementById("verbListSize"),
+  optionsToggle: document.getElementById("optionsToggle"),
+  optionsPanel: document.getElementById("optionsPanel"),
 };
+
+function closeOptionsPanel() {
+  els.optionsPanel.classList.add("hidden");
+  els.optionsToggle.setAttribute("aria-expanded", "false");
+}
 
 function applyTierSize() {
   const tier = parseInt(els.verbListSize.value, 10) || DEFAULT_TIER;
@@ -293,6 +300,10 @@ els.nextRoundBtn.addEventListener("click", () => {
 // from firing a second time on top of this (the exact double-fire bug the
 // drill screen's Enter handling had earlier).
 document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    closeOptionsPanel();
+    return;
+  }
   if (e.key !== "Enter") return;
   if (!els.roundIntro.classList.contains("hidden")) {
     e.preventDefault();
@@ -300,6 +311,22 @@ document.addEventListener("keydown", (e) => {
   } else if (!els.roundSummary.classList.contains("hidden")) {
     e.preventDefault();
     prepareRound();
+  }
+});
+
+els.optionsToggle.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const isOpen = !els.optionsPanel.classList.contains("hidden");
+  els.optionsPanel.classList.toggle("hidden");
+  els.optionsToggle.setAttribute("aria-expanded", String(!isOpen));
+});
+
+// Click-outside-to-close. Clicks on the toggle button itself are handled by
+// its own listener above (with stopPropagation), so this only ever sees
+// clicks that should close the panel.
+document.addEventListener("click", (e) => {
+  if (!els.optionsPanel.classList.contains("hidden") && !els.optionsPanel.contains(e.target)) {
+    closeOptionsPanel();
   }
 });
 

@@ -73,7 +73,8 @@ body {
 }
 
 .lang-switch,
-.tier-select {
+.tier-select,
+.options-toggle {
   color: var(--muted);
   background: transparent;
   border: 1px solid var(--border);
@@ -85,9 +86,36 @@ body {
 }
 
 .lang-switch:hover,
-.tier-select:hover {
+.tier-select:hover,
+.options-toggle:hover {
   color: var(--accent);
   border-color: var(--accent);
+}
+
+/* Wrapping the toggle+panel in its own relative container means the panel is
+   absolutely positioned and never affects the topbar's flex layout -- adding
+   or removing toggles inside it (e.g. a future tense-selector) can never
+   shift the language/verb-count controls next to it, which is the whole
+   point of moving these here instead of listing them inline. */
+.options-wrap {
+  position: relative;
+}
+
+.options-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 10;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  min-width: 180px;
 }
 
 .streak {
