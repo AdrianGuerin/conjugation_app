@@ -43,30 +43,71 @@ hand-modified. Written as a reference for future changes, not user-facing.
 
 ## Italian (`data/verbs.italian.json`)
 
-- Source: Verbiste's own Italian data (`RemiCardona/verbiste`, the original
-  multi-language project — not a JS fork), raw XML, GPL-2.0.
-- Same computed-forms approach as French (radical + template suffix), parsed directly
-  from XML since no pre-converted JSON exists for Italian.
-- **Known data gap**: the source file has a block of verbs the Verbiste maintainers
-  themselves marked "en attente" (pending) and commented out of the active data —
-  including some very common ones. Confirmed unavailable: *nascere, morire, rimanere,
-  salire, scendere, decidere, offrire, ricevere, esistere, considerare, indicare,
-  vincere, crescere, muovere, promettere, rompere, costruire, distruggere, piangere,
-  gridare, perdere, ridere*. These were substituted with other common verbs
-  (*accendere, apparire, coprire, fermare, lavare, preferire, preparare, provare,
-  riposare, sognare, sperare, sposare, telefonare, temere, togliere, tradurre, usare,
-  vestire, visitare, ottenere, contenere, mantenere*). Usable pool is ~251 verbs vs.
-  Spanish's 638 and French's 7000+.
-- Passato prossimo built the same way as French's passé composé, including the same
-  plural-participle agreement fix for essere-verbs.
+- **Source (current): Morph-it!** (Baroni & Zanchetta, dual CC BY-SA 2.0 / LGPL),
+  `data/morphit/morph-it_048.txt` — a tagged wordform lexicon, ~505k entries. Forms
+  are **looked up verbatim**, the same architecture as Spanish, not computed.
+- **Previously**: Verbiste's own Italian data (`RemiCardona/verbiste`, GPL-2.0), same
+  radical+template computation as French. Switched away from this — see "Why Italian
+  moved off Verbiste" below for what went wrong with it.
+- Morph-it! ships as ISO-8859-1, not UTF-8; `build_italian_data.ps1` decodes it
+  directly rather than trusting `Get-Content -Encoding` (Windows PowerShell 5.1's
+  `-Encoding` only accepts a fixed named-encoding enum, not an arbitrary
+  `[System.Text.Encoding]`).
+- Some Morph-it! cells list more than one spelling (e.g. an apocopated variant
+  alongside the standard one, like "dan" beside "danno"); the build picks the
+  longest, which matched the standard/modern form in every case checked.
+- **Morph-it! itself has a confirmed bug**: it duplicates "prenderà" under both 1s
+  and 3s future tags, missing "prenderò" entirely. Same pattern hit rispondere,
+  temere, and accendere. `build_italian_data.ps1` hand-overrides these 4 specific
+  cells and sanity-checks that 1st/3rd person singular are never identical for any
+  verb/tense (linguistically impossible in Italian) so a future re-run would catch
+  new instances of this same failure mode rather than silently trusting them.
+- Passato prossimo still built manually (it's periphrastic, not a single lexicon
+  entry in Morph-it! either): `[auxiliary present tense] + [past participle]`, both
+  now looked up verbatim. Includes the same plural-participle agreement fix as
+  French (see below) for essere-verbs' noi/voi/loro.
   - **Language difference, not a bug**: unlike French's "être" (which takes avoir),
     Italian's "essere" takes **itself** as auxiliary ("sono stato", not "ho stato").
   - Third person drilled as bare "lui", same reasoning as French's "il".
-- Unlike French, the source schema keeps gerundio (`<gerund>`, e.g. "parlando") and
-  present participle (`<participle><present-participle>`, e.g. "parlante") as
-  genuinely separate fields. "Gerundio" is drilled from the `<gerund>` field
-  specifically — both the correct term and the correct field, no hedge needed.
-- 100 verbs, hand-curated (selection only — see ranking note below).
+  - The essere-verb list (which verbs take essere vs. avere) is hand-maintained —
+    Morph-it! doesn't tag which auxiliary a verb takes, only which verbs (essere,
+    avere, venire) function as auxiliaries themselves.
+- Like the old Verbiste source (and unlike French's), Morph-it! keeps gerundio
+  (`ger+pres` tag, e.g. "parlando") and present participle (`part+pres`, e.g.
+  "parlante") as genuinely separate entries. "Gerundio" is looked up from the
+  `ger+pres` tag specifically — both the correct term and the correct source, no
+  hedge needed (contrast French's "Participe présent" compromise above).
+- 100 verbs, hand-curated (selection only — see "Verb selection" below). `rank`
+  comes from LeFFI frequency data, unaffected by the Morph-it! switch (see below).
+
+### Why Italian moved off Verbiste
+
+A verification pass against Morph-it! (see below) found real bugs in the old
+Verbiste-computed forms, and traced the cause: **chiedere, chiudere, coprire,
+produrre, and tradurre each appear twice in Verbiste's source XML with two
+different, conflicting templates**, and the old script's naive lookup
+(`$verbsByInfinitive[$v.i] = $v.t`) silently kept whichever came last in the file
+— with no way to know it picked wrong without an external check. This is a
+different, worse problem than the already-known missing-verb gap (below): it's
+not just incomplete, it was producing confidently-wrong output for verbs it did
+claim to cover. That, combined with Verbiste's already-known gap (following),
+motivated the switch to verbatim lookup — the same reasoning Spanish's
+architecture already reflected.
+
+**Verbiste's known gap** (relevant only to the old source, kept for history):
+its source file has a block of verbs the maintainers themselves marked "en
+attente" (pending) and commented out of the active data — including some very
+common ones (nascere, morire, rimanere, salire, scendere, decidere, offrire,
+ricevere, esistere, considerare, indicare, vincere, crescere, muovere,
+promettere, rompere, costruire, distruggere, piangere, gridare, perdere,
+ridere). The current 100-verb list still substitutes other common verbs for
+these (accendere, apparire, coprire, fermare, lavare, preferire, preparare,
+provare, riposare, sognare, sperare, sposare, telefonare, temere, togliere,
+tradurre, usare, vestire, visitare, ottenere, contenere, mantenere) — that
+selection wasn't revisited when the forms source changed, to keep the change
+scoped to lookup-vs-computed. Morph-it! *does* have all of the gap verbs
+available now, so revisiting the selection to add them back is a real,
+separate option.
 
 ## Verb selection (all three languages)
 
@@ -105,3 +146,29 @@ data, several fairly common (rimanere: 1607, perdere: 1386, decidere: 1331). LeF
 can't supply their *written* forms (see above), but it does confirm they're
 legitimate, sometimes-more-common-than-current-substitutes verbs worth adding back
 in if someone authors their conjugations by hand the way the current 100 were.
+
+### French: a lookup option now exists, not yet acted on
+
+Unlike LeFFI, the `french-verbs-lefff` npm package (Ludan Stoecklé, MIT-licensed
+wrapper) bundles Lefff's (Lexique des Formes Fléchies du Français, Benoît Sagot /
+INRIA) `conjugations.json` — a genuinely verbatim, per-verb lookup table with real
+written forms for every tense we need, including the same 4-way past-participle
+split (masc-sg/masc-pl/fem-sg/fem-pl) our passé composé agreement logic already
+expects. The data itself is under **LGPL-LR** (Lesser GPL for Linguistic
+Resources) — a real, established license for exactly this kind of resource,
+same spirit (attribution + share-alike) as the GPL-2.0 Verbiste data already in
+use. This would let French move to verbatim lookup the same way Italian just did,
+which would likely close off the same *class* of bug (wrong template picked for
+an ambiguous verb) that motivated Italian's switch — French's current Verbiste
+data hasn't been checked for the same "verb listed twice with conflicting
+templates" issue Italian had, so it's unknown whether this same failure mode is
+lurking there too. Not done: this note exists to make the option visible, not
+to imply it's necessary or already evaluated for correctness the way Italian's
+switch was.
+
+Also evaluated for French, both authoritative but with no stated license (manual
+reference only, not bulk-usable): the Académie française data
+(`ShingZhanho/verbe-conjugaison-academie-francaise`) and RALI's Dubois "Les
+Verbes Français" (LVF) lexicon — the latter classifies verbs by conjugation group
+and auxiliary (avoir/être) but doesn't store actual conjugated forms, so it could
+only ever cross-check the être-verb list, not spelling.

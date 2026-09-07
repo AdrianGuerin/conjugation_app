@@ -5,8 +5,7 @@ raw_verbs_fr_templates.json
 raw_verbs_it_list.xml
 raw_verbs_it_templates.xml
 raw_verbs_it_leffi_lexemes.csv
-raw_verbs_it_leffi_forms.csv
-raw_verbs_it_leffi_cells.csv
+data/morphit/morph-it_048.txt
 
 # Local tooling config
 .claude/
