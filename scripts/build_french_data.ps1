@@ -12,6 +12,14 @@
 # "il / elle" etc., specifically because the stored participle is masculine
 # and would be wrong for "elle" in etre-verbs (e.g. "elle est allee", not
 # "alle") -- offering the ambiguous label would be actively misleading here.
+#
+# "falloir" was in this list until a verification pass against Lefff caught
+# it: falloir is impersonal (only exists as "il faut", no je/tu/nous/vous/ils
+# form at all), but the per-pronoun drill structure was asking for one
+# anyway, producing bogus "fa"-fragment answers for every non-3rd-person
+# slot. Not a spelling bug -- the verb just doesn't fit this drill's
+# structure, on any data source. Replaced with "porter" (fully regular).
+# See NOTES.md.
 
 $ErrorActionPreference = "Stop"
 
@@ -96,7 +104,7 @@ $verbList = [ordered]@{
   "changer" = "to change"
   "tomber" = "to fall"
   "commencer" = "to begin"
-  "falloir" = "to be necessary"
+  "porter" = "to carry, wear"
   "devenir" = "to become"
   "revenir" = "to come back"
   "rentrer" = "to go back in, get home"

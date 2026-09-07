@@ -41,6 +41,31 @@ hand-modified. Written as a reference for future changes, not user-facing.
   string is the bare participle (parlant), not the "en + participle" adverbial form.
 - 100 verbs, hand-curated. `rank` = position in the curated list.
 
+### Verified against Lefff — clean result, unlike Italian
+
+A verification pass against Lefff (Lexique des Formes Fléchies du Français,
+Benoît Sagot / INRIA, via `french-verbs-lefff`'s `conjugations.json`, LGPL-LR —
+see "French: a lookup option" below) found **no spelling bugs** in the current
+Verbiste-computed French data. This is a meaningfully different result than
+Italian's same kind of check, which found real template-assignment bugs — French
+did not turn up the same "verb listed twice with conflicting templates" problem,
+so there's no equivalent evidence-based case for switching French off Verbiste
+the way there was for Italian. Two categories of apparent mismatch, both
+harmless:
+- **Two genuinely-valid alternate forms**, not bugs: "peux" vs. Lefff's "puis"
+  for pouvoir 1s (both correct; "peux" is the more commonly taught form), and
+  "paie"-style vs. Lefff's "paye"-style for payer (French orthography allows
+  either spelling for -ayer verbs; our forms are the more common modern choice).
+  Kept as-is.
+- **One real, different kind of problem, now fixed**: "falloir" (to be
+  necessary) is impersonal — it only exists as "il faut", with no
+  je/tu/nous/vous/ils form at all. The old data had "fa" (a bare, meaningless
+  template-radical fragment) populated for every non-3rd-person slot, since the
+  per-pronoun drill structure asked for a form that doesn't grammatically exist.
+  Not a spelling error to fix with better data — falloir just doesn't fit this
+  drill's structure on *any* source. Replaced with "porter" (fully regular) in
+  the curated list rather than special-casing impersonal verbs for one entry.
+
 ## Italian (`data/verbs.italian.json`)
 
 - **Source (current): Morph-it!** (Baroni & Zanchetta, dual CC BY-SA 2.0 / LGPL),
@@ -147,7 +172,7 @@ can't supply their *written* forms (see above), but it does confirm they're
 legitimate, sometimes-more-common-than-current-substitutes verbs worth adding back
 in if someone authors their conjugations by hand the way the current 100 were.
 
-### French: a lookup option now exists, not yet acted on
+### French: a lookup option exists, evaluated, not switched to
 
 Unlike LeFFI, the `french-verbs-lefff` npm package (Ludan Stoecklé, MIT-licensed
 wrapper) bundles Lefff's (Lexique des Formes Fléchies du Français, Benoît Sagot /
@@ -157,14 +182,20 @@ split (masc-sg/masc-pl/fem-sg/fem-pl) our passé composé agreement logic alread
 expects. The data itself is under **LGPL-LR** (Lesser GPL for Linguistic
 Resources) — a real, established license for exactly this kind of resource,
 same spirit (attribution + share-alike) as the GPL-2.0 Verbiste data already in
-use. This would let French move to verbatim lookup the same way Italian just did,
-which would likely close off the same *class* of bug (wrong template picked for
-an ambiguous verb) that motivated Italian's switch — French's current Verbiste
-data hasn't been checked for the same "verb listed twice with conflicting
-templates" issue Italian had, so it's unknown whether this same failure mode is
-lurking there too. Not done: this note exists to make the option visible, not
-to imply it's necessary or already evaluated for correctness the way Italian's
-switch was.
+use.
+
+Used it to run the same kind of verification pass that caught Italian's bugs
+(see "Verified against Lefff" above) — **result was clean**: no evidence of the
+"verb listed twice with conflicting templates" failure mode that motivated
+Italian's switch. The only fix that came out of it (falloir) was a modeling
+problem, not a forms-lookup problem, and would recur identically on Lefff data
+too, since falloir is genuinely impersonal regardless of source. Given that,
+there's no correctness-based case for switching French off Verbiste right now,
+unlike Italian where the switch fixed confirmed, demonstrated bugs. Left as
+computed rather than switched, on the theory that a working thing with clean
+verification results doesn't need touching without a specific reason.
+`raw_verbs_fr_lefff.json` and `scripts/verify_french_against_lefff.ps1` are
+kept so this check can be re-run if the French verb list changes.
 
 Also evaluated for French, both authoritative but with no stated license (manual
 reference only, not bulk-usable): the Académie française data
