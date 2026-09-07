@@ -269,23 +269,51 @@ $script:AUX_PRESENT = @{
   "essere" = Get-PresentTense "essere"
 }
 
-$verbsOut = New-Object System.Collections.Generic.List[object]
-$rank = 0
+# Rank comes from LeFFI (matteo-pellegrini/LeFFI, CC BY-SA 4.0) frequency
+# data -- an independent, corpus-derived (COLFIS) ranking -- rather than the
+# hand-curated selection order above. The verb *selection* above is still
+# hand-curated (LeFFI's frequency data doesn't change which 100 verbs are
+# included, only what order they're presented in); this is exactly the
+# "swap the rank source without touching selection logic" seam the rank
+# field was designed for.
+$leffiFreq = @{}
+Import-Csv -Path (Join-Path $root "raw_verbs_it_leffi_lexemes.csv") | ForEach-Object {
+  $leffiFreq[$_.lexeme_id] = [int]$_.frequency
+}
+
+$unranked = New-Object System.Collections.Generic.List[object]
 foreach ($infinitive in $verbList.Keys) {
-  $rank++
   $forms = Get-FormsFor $infinitive
-  $verbsOut.Add([ordered]@{
+  $freq = if ($leffiFreq.ContainsKey($infinitive)) { $leffiFreq[$infinitive] } else { -1 }
+  $unranked.Add([pscustomobject]@{
     infinitive = $infinitive
     english = $verbList[$infinitive]
-    rank = $rank
+    freq = $freq
     gerund = Get-Gerund $infinitive
     participle = Get-Participle $infinitive
     forms = [ordered]@{ Indicativo = $forms }
   })
 }
+if (($unranked | Where-Object { $_.freq -eq -1 }).Count -gt 0) {
+  Write-Warning "Not found in LeFFI, ranked last: $(($unranked | Where-Object { $_.freq -eq -1 } | ForEach-Object { $_.infinitive }) -join ', ')"
+}
+
+$verbsOut = New-Object System.Collections.Generic.List[object]
+$rank = 0
+foreach ($v in ($unranked | Sort-Object -Property freq -Descending)) {
+  $rank++
+  $verbsOut.Add([ordered]@{
+    infinitive = $v.infinitive
+    english = $v.english
+    rank = $rank
+    gerund = $v.gerund
+    participle = $v.participle
+    forms = $v.forms
+  })
+}
 
 $result = [ordered]@{
-  generatedFrom = "Verbiste (github.com/RemiCardona/verbiste, GPL-2.0) - forms computed from radical+template rules"
+  generatedFrom = "Verbiste (github.com/RemiCardona/verbiste, GPL-2.0) - forms computed from radical+template rules; ranked by LeFFI (matteo-pellegrini/LeFFI, CC BY-SA 4.0) frequency data"
   verbs = $verbsOut
 }
 

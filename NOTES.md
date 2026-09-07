@@ -66,13 +66,42 @@ hand-modified. Written as a reference for future changes, not user-facing.
   present participle (`<participle><present-participle>`, e.g. "parlante") as
   genuinely separate fields. "Gerundio" is drilled from the `<gerund>` field
   specifically — both the correct term and the correct field, no hedge needed.
-- 100 verbs, hand-curated. `rank` = position in the curated list.
+- 100 verbs, hand-curated (selection only — see ranking note below).
 
 ## Verb selection (all three languages)
 
-None of the three verb lists come from an actual frequency corpus — they're
-hand-curated from general knowledge of common verbs, ordered roughly most-to-least
-common. The `rank` field exists specifically so this can be swapped for a real
-corpus (e.g. SUBTLEX-ESP/FR/IT) later without touching any app logic: replace the
-curated array in the relevant `scripts/build_*.ps1`, and the verb-list-size selector
-("Top 20/50/100") keeps working unchanged since it just filters `rank <= N`.
+Which 100 verbs are *included* is still hand-curated from general knowledge for all
+three languages — nobody's run a proper frequency-based selection pass yet. The
+`rank` field (what order they're presented in / which ones "Top 20/50/100" includes)
+is a separate concern from selection, and is designed so its source can be swapped
+without touching any app logic: whichever `scripts/build_*.ps1` sets `rank`, the
+verb-list-size selector just filters `rank <= N` regardless of how rank was derived.
+
+**Italian now uses this seam for real**: `rank` comes from LeFFI
+(`matteo-pellegrini/LeFFI`, CC BY-SA 4.0) frequency data (COLFIS corpus), not
+hand-curated guessing. Spanish and French still use hand-curated order as rank.
+
+### LeFFI: usable for ranking, not for verifying written forms
+
+LeFFI was evaluated as a way to cross-check Italian's computed forms, since it's an
+independent academic source unrelated to Verbiste. That didn't work out: LeFFI's
+`forms.csv` only stores **phonetic** transcriptions (e.g. "ho" → "o", silent h
+correctly dropped in speech; "faccio" → "fattʃo", IPA affricate; "può" → "pwo",
+semivowel, no written accent) — there is no orthographic-spelling column anywhere in
+the dataset (confirmed against the full file listing, not just the files pulled
+locally). Comparing our spelled forms against LeFFI's phonetic ones directly produces
+mostly false positives (1289 of 2600 comparisons "differed," nearly all just
+spelling-vs-phonetics, not real errors) and was abandoned rather than pursued further
+(e.g. building an IPA-to-spelling converter) — that's a real, error-prone project of
+its own, not a quick verification step, and wrong output dressed up as "verified"
+would be worse than the status quo.
+
+**Still valid and in use**: LeFFI's `lexemes.csv` (verb + frequency, no phonetics
+involved) is exactly what powers the Italian ranking above.
+
+**Known opportunity, not yet acted on**: all 22 of Italian's Verbiste-gap verbs
+(nascere, morire, rimanere, etc. — see above) exist in LeFFI with real frequency
+data, several fairly common (rimanere: 1607, perdere: 1386, decidere: 1331). LeFFI
+can't supply their *written* forms (see above), but it does confirm they're
+legitimate, sometimes-more-common-than-current-substitutes verbs worth adding back
+in if someone authors their conjugations by hand the way the current 100 were.

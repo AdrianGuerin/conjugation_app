@@ -794,6 +794,10 @@ els.langSwitch.addEventListener("change", () => {
 els.verbListSize.addEventListener("change", () => {
   safeSet(TIER_KEY, els.verbListSize.value);
   applyTierSize();
+  // The current round's verb may not be in the new (possibly smaller) pool
+  // any more -- re-pick immediately rather than leaving an out-of-pool verb
+  // on screen until the round happens to finish naturally.
+  if (allVerbs.length) prepareRound();
 });
 
 function initWithData(data) {
