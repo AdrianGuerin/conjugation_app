@@ -20,6 +20,11 @@ window.addEventListener("error", (e) => {
 const MASTERY_KEY = "conjugue_mastery_v1_fr";
 const STREAK_KEY = "conjugue_streak_v1_fr";
 const STRICT_KEY = "conjugue_strict_v1_fr";
+// Shared (not language-prefixed) across all language pages on purpose --
+// it's a UI preference about how the drill behaves, not per-language data,
+// so setting it once should carry over when switching languages.
+const TIER_KEY = "verb_tier_v1";
+const DEFAULT_TIER = 50;
 
 // v1 drills 4 simple tenses plus passé composé. French's everyday past tense
 // is compound (auxiliary + participle), unlike Spanish's simple pretérito,
@@ -110,7 +115,8 @@ function setStreak(n) {
   document.getElementById("streak").textContent = `🔥 ${n}`;
 }
 
-let verbs = [];
+let allVerbs = [];
+let verbs = []; // allVerbs filtered down to the selected tier size
 let round = null; // { verb, pronoun, tenseIndex, correctCount }
 let waitingToAdvance = false;
 
@@ -131,7 +137,14 @@ const els = {
   nextRoundBtn: document.getElementById("nextRoundBtn"),
   strictAccents: document.getElementById("strictAccents"),
   checkBtn: document.getElementById("checkBtn"),
+  langSwitch: document.getElementById("langSwitch"),
+  verbListSize: document.getElementById("verbListSize"),
 };
+
+function applyTierSize() {
+  const tier = parseInt(els.verbListSize.value, 10) || DEFAULT_TIER;
+  verbs = allVerbs.filter((v) => v.rank <= tier);
+}
 
 function pickWeightedVerb(excludeInfinitive) {
   const mastery = loadMastery();
@@ -309,9 +322,20 @@ els.strictAccents.addEventListener("change", () => {
   safeSet(STRICT_KEY, els.strictAccents.checked ? "1" : "0");
 });
 
+els.langSwitch.addEventListener("change", () => {
+  window.location.href = els.langSwitch.value;
+});
+
+els.verbListSize.addEventListener("change", () => {
+  safeSet(TIER_KEY, els.verbListSize.value);
+  applyTierSize();
+});
+
 function initWithData(data) {
-  verbs = data.verbs;
+  allVerbs = data.verbs;
   els.strictAccents.checked = safeGet(STRICT_KEY) === "1";
+  els.verbListSize.value = safeGet(TIER_KEY) || String(DEFAULT_TIER);
+  applyTierSize();
   setStreak(getStreak());
   prepareRound();
 }

@@ -17,25 +17,32 @@ window.addEventListener("error", (e) => {
   showFatalError(`${e.message} (${(e.filename || "").split("/").pop()}:${e.lineno})`);
 });
 
-const MASTERY_KEY = "conjuga_mastery_v1";
-const STREAK_KEY = "conjuga_streak_v1";
-const STRICT_KEY = "conjuga_strict_v1";
-const VOSOTROS_KEY = "conjuga_vosotros_v1";
-// Shared (not "conjuga_"-prefixed) across all language pages on purpose --
+const MASTERY_KEY = "coniuga_mastery_v1_it";
+const STREAK_KEY = "coniuga_streak_v1_it";
+const STRICT_KEY = "coniuga_strict_v1_it";
+// Shared (not language-prefixed) across all language pages on purpose --
 // it's a UI preference about how the drill behaves, not per-language data,
 // so setting it once should carry over when switching languages.
 const TIER_KEY = "verb_tier_v1";
 const DEFAULT_TIER = 50;
 
-// v1 drills the 5 simple indicative tenses only. The data file already holds
-// every mood/tense in the source dataset, so widening this list later is a
-// config change, not a data-pipeline change.
+// v1 drills 4 simple tenses plus passato prossimo. Italian's everyday past
+// tense is compound (auxiliary + participle), unlike Spanish's simple
+// preterite, so passato prossimo stands in for it here rather than the
+// rarely-spoken (mostly literary/southern) passato remoto -- same call as
+// French's passé composé. Third person is bare "lui" rather than "lui / lei"
+// specifically because the stored passato prossimo participle is masculine
+// and would be wrong for "lei" on essere-verbs (e.g. "lei è andata", not
+// "andato") — offering the ambiguous label would be actively misleading.
 const ACTIVE_MOOD = "Indicativo";
-const ACTIVE_TENSES = ["Presente", "Pretérito", "Imperfecto", "Futuro", "Condicional"];
+const ACTIVE_TENSES = ["Presente", "Passato prossimo", "Imperfetto", "Futuro", "Condizionale"];
 
-// Gerund/participle don't conjugate by pronoun, so they're not part of the
-// per-pronoun forms table — each verb just carries a single string for each,
-// looked up directly off the verb object rather than through ACTIVE_MOOD.
+// Unlike French (where the dataset conflates gerund/present-participle under
+// one <participle> element, forcing the "Participe présent" hedge), Italian
+// genuinely has a separate gerundio (amando) distinct from the participio
+// presente (amante) -- and gerundio is the form actually used in progressive
+// constructions ("sto parlando"), same as Spanish's gerundio. So these
+// labels are both correct and match Spanish's terminology exactly.
 const EXTRA_FORMS = [
   { key: "gerund", label: "Gerundio" },
   { key: "participle", label: "Participio" },
@@ -43,19 +50,18 @@ const EXTRA_FORMS = [
 const TOTAL_STEPS = ACTIVE_TENSES.length + EXTRA_FORMS.length;
 
 const PRONOUNS = [
-  { key: "1s", label: "yo" },
-  { key: "2s", label: "tú" },
-  { key: "3s", label: "él / ella / usted" },
-  { key: "1p", label: "nosotros" },
-  { key: "2p", label: "vosotros" },
-  { key: "3p", label: "ellos / ellas / ustedes" },
+  { key: "1s", label: "io" },
+  { key: "2s", label: "tu" },
+  { key: "3s", label: "lui" },
+  { key: "1p", label: "noi" },
+  { key: "2p", label: "voi" },
+  { key: "3p", label: "loro" },
 ];
 
-// Vowel-accent folding only — ñ is a distinct letter, not a decoration, so it
-// must never fold to "n" even in lenient mode.
-const ACCENT_FOLD = { á: "a", é: "e", í: "i", ó: "o", ú: "u", ü: "u" };
+// Vowel-accent folding only.
+const ACCENT_FOLD = { à: "a", è: "e", é: "e", ì: "i", ò: "o", ù: "u" };
 function foldAccents(s) {
-  return s.replace(/[áéíóúü]/g, (c) => ACCENT_FOLD[c]);
+  return s.replace(/[àèéìòù]/g, (c) => ACCENT_FOLD[c]);
 }
 
 // Some browsers block localStorage entirely on file:// origins (the
@@ -124,7 +130,6 @@ const els = {
   summaryLine: document.getElementById("summaryLine"),
   nextRoundBtn: document.getElementById("nextRoundBtn"),
   strictAccents: document.getElementById("strictAccents"),
-  includeVosotros: document.getElementById("includeVosotros"),
   checkBtn: document.getElementById("checkBtn"),
   langSwitch: document.getElementById("langSwitch"),
   verbListSize: document.getElementById("verbListSize"),
@@ -155,8 +160,7 @@ function pickWeightedVerb(excludeInfinitive) {
 }
 
 function pickPronoun() {
-  const pool = els.includeVosotros.checked ? PRONOUNS : PRONOUNS.filter((p) => p.key !== "2p");
-  return pool[Math.floor(Math.random() * pool.length)];
+  return PRONOUNS[Math.floor(Math.random() * PRONOUNS.length)];
 }
 
 function prepareRound() {
@@ -244,10 +248,10 @@ function submitAnswer() {
   els.feedback.classList.remove("hidden", "correct", "incorrect");
   if (result.correct && result.accentPerfect) {
     els.feedback.classList.add("correct");
-    els.feedback.textContent = "¡Correcto!";
+    els.feedback.textContent = "Corretto!";
   } else if (result.correct) {
     els.feedback.classList.add("correct");
-    els.feedback.innerHTML = `¡Correcto! <span class="correction">Watch the accent: ${correctForm}</span>`;
+    els.feedback.innerHTML = `Corretto! <span class="correction">Watch the accent: ${correctForm}</span>`;
   } else {
     els.feedback.classList.add("incorrect");
     const hint = isExtra ? correctForm : `${round.pronoun.label} → ${correctForm}`;
@@ -312,10 +316,6 @@ els.strictAccents.addEventListener("change", () => {
   safeSet(STRICT_KEY, els.strictAccents.checked ? "1" : "0");
 });
 
-els.includeVosotros.addEventListener("change", () => {
-  safeSet(VOSOTROS_KEY, els.includeVosotros.checked ? "1" : "0");
-});
-
 els.langSwitch.addEventListener("change", () => {
   window.location.href = els.langSwitch.value;
 });
@@ -328,7 +328,6 @@ els.verbListSize.addEventListener("change", () => {
 function initWithData(data) {
   allVerbs = data.verbs;
   els.strictAccents.checked = safeGet(STRICT_KEY) === "1";
-  els.includeVosotros.checked = safeGet(VOSOTROS_KEY) === "1";
   els.verbListSize.value = safeGet(TIER_KEY) || String(DEFAULT_TIER);
   applyTierSize();
   setStreak(getStreak());
@@ -340,7 +339,7 @@ function initWithData(data) {
 if (window.EMBEDDED_VERB_DATA) {
   initWithData(window.EMBEDDED_VERB_DATA);
 } else {
-  fetch("data/verbs.json")
+  fetch("data/verbs.italian.json")
     .then((r) => r.json())
     .then(initWithData)
     .catch((err) => {

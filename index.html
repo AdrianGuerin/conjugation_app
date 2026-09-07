@@ -10,7 +10,16 @@
   <header class="topbar">
     <h1>Conjuga</h1>
     <div class="topbar-controls">
-      <a class="lang-switch" href="index.fr.html">🇫🇷 Français</a>
+      <select id="langSwitch" class="lang-switch" aria-label="Language">
+        <option value="index.html" selected>🇪🇸 Español</option>
+        <option value="index.fr.html">🇫🇷 Français</option>
+        <option value="index.it.html">🇮🇹 Italiano</option>
+      </select>
+      <select id="verbListSize" class="tier-select" aria-label="Verb list size">
+        <option value="20">Top 20 verbs</option>
+        <option value="50" selected>Top 50 verbs</option>
+        <option value="100">Top 100 verbs</option>
+      </select>
       <label class="strict-toggle">
         <input type="checkbox" id="includeVosotros">
         Include vosotros

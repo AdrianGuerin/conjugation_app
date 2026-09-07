@@ -31,7 +31,20 @@ $connaitre = "conna" + (CH 0x00EE) + "tre"
 $reussir = "r" + (CH 0x00E9) + "ussir"
 $reflechir = "r" + (CH 0x00E9) + "fl" + (CH 0x00E9) + "chir"
 $repondre = "r" + (CH 0x00E9) + "pondre"
+$naitre = "na" + (CH 0x00EE) + "tre"
+$reconnaitre = "reconna" + (CH 0x00EE) + "tre"
+$ecrire = (CH 0x00E9) + "crire"
+$decrire = "d" + (CH 0x00E9) + "crire"
+$ecouter = (CH 0x00E9) + "couter"
+$repeter = "r" + (CH 0x00E9) + "p" + (CH 0x00E9) + "ter"
+$presenter = "pr" + (CH 0x00E9) + "senter"
+$detruire = "d" + (CH 0x00E9) + "truire"
 
+# Ordered most-to-least common (hand-curated, not corpus-derived -- see
+# README). Insertion order becomes each verb's "rank" field in the output, so
+# the app's verb-list-size selector (top 20/50/100) is just "rank <= N" --
+# swapping this for a real frequency corpus later only means replacing this
+# list, not touching any selection logic downstream.
 $verbList = [ordered]@{
   $etre = "to be"
   "avoir" = "to have"
@@ -83,9 +96,62 @@ $verbList = [ordered]@{
   "changer" = "to change"
   "tomber" = "to fall"
   "commencer" = "to begin"
+  "falloir" = "to be necessary"
+  "devenir" = "to become"
+  "revenir" = "to come back"
+  "rentrer" = "to go back in, get home"
+  "monter" = "to go up, climb"
+  "descendre" = "to go down"
+  $naitre = "to be born"
+  "mourir" = "to die"
+  $reconnaitre = "to recognize"
+  "apprendre" = "to learn"
+  "comprendre" = "to understand"
+  "surprendre" = "to surprise"
+  "permettre" = "to allow"
+  "promettre" = "to promise"
+  "admettre" = "to admit"
+  "ouvrir" = "to open"
+  "offrir" = "to offer"
+  "souffrir" = "to suffer"
+  $ecrire = "to write"
+  $decrire = "to describe"
+  "lire" = "to read"
+  "vivre" = "to live"
+  "suivre" = "to follow"
+  "conduire" = "to drive"
+  "produire" = "to produce"
+  "construire" = "to build"
+  $detruire = "to destroy"
+  $ecouter = "to listen"
+  "oublier" = "to forget"
+  "gagner" = "to win, earn"
+  "payer" = "to pay"
+  "acheter" = "to buy"
+  "travailler" = "to work"
+  "manger" = "to eat"
+  "habiter" = "to live (in a place)"
+  "sembler" = "to seem"
+  "obtenir" = "to obtain"
+  "appartenir" = "to belong"
+  "servir" = "to serve"
+  "dormir" = "to sleep"
+  "rire" = "to laugh"
+  "sourire" = "to smile"
+  "courir" = "to run"
+  "pleurer" = "to cry"
+  "crier" = "to shout"
+  "envoyer" = "to send"
+  "recevoir" = "to receive"
+  $repeter = "to repeat"
+  $presenter = "to present, introduce"
+  "exister" = "to exist"
 }
 
-$etreVerbs = @("aller", "venir", "entrer", "sortir", "partir", "arriver", "rester", "tomber")
+$etreVerbs = @(
+  "aller", "venir", "entrer", "sortir", "partir", "arriver", "rester", "tomber",
+  "devenir", "revenir", "rentrer", "monter", "descendre", $naitre, "mourir"
+)
 
 function Get-Radical($infinitive, $template) {
   $ending = $template.infinitive.'infinitive-present'.i
@@ -109,6 +175,20 @@ function Get-Participle($infinitive) {
   $participleField = $tmpl.participle.'past-participle'
   $participleSuffix = if ($participleField -is [array]) { Get-SuffixText $participleField[0] } else { Get-SuffixText $participleField }
   return $radical + $participleSuffix
+}
+
+# Masculine plural variant (index 1 of the 4-way [masc-sing, masc-plur,
+# fem-sing, fem-plur] array) -- needed for etre-verbs' nous/vous/ils passe
+# compose, since the participle agrees in number with the subject there
+# ("nous sommes alles", not "alle"). Avoir-verbs never agree, so this is
+# only ever called for etre-verbs.
+function Get-ParticiplePlural($infinitive) {
+  $entry = $verbsFr.$infinitive
+  $tmpl = $conjFr.($entry.t)
+  $radical = Get-Radical $infinitive $tmpl
+  $participleField = $tmpl.participle.'past-participle'
+  $variant = if ($participleField -is [array]) { $participleField[1] } else { $participleField }
+  return $radical + (Get-SuffixText $variant)
 }
 
 function Get-PresentParticiple($infinitive) {
@@ -145,21 +225,25 @@ function Get-FormsFor($infinitive) {
     }
   }
 
-  # Passe compose: auxiliary present + masculine singular past participle.
-  $participleField = $tmpl.participle.'past-participle'
-  $participleSuffix = if ($participleField -is [array]) { Get-SuffixText $participleField[0] } else { Get-SuffixText $participleField }
-  $participle = $radical + $participleSuffix
+  # Passe compose: auxiliary present + past participle. Singular persons use
+  # the masculine singular participle; for etre-verbs the plural persons need
+  # the masculine plural variant instead, since the participle agrees in
+  # number with the subject there (avoir-verbs never agree, so this is a
+  # no-op for them -- both variants are the same participle).
+  $isEtreVerb = $etreVerbs -contains $infinitive
+  $participleSing = Get-Participle $infinitive
+  $participlePlur = if ($isEtreVerb) { Get-ParticiplePlural $infinitive } else { $participleSing }
 
-  $auxName = if ($etreVerbs -contains $infinitive) { "etre" } else { "avoir" }
+  $auxName = if ($isEtreVerb) { "etre" } else { "avoir" }
   $auxForms = $script:AUX_PRESENT[$auxName]
   $passeComposeKey = "Pass" + (CH 0x00E9) + " compos" + (CH 0x00E9)
   $result[$passeComposeKey] = [ordered]@{
-    "1s" = "$($auxForms[0]) $participle"
-    "2s" = "$($auxForms[1]) $participle"
-    "3s" = "$($auxForms[2]) $participle"
-    "1p" = "$($auxForms[3]) $participle"
-    "2p" = "$($auxForms[4]) $participle"
-    "3p" = "$($auxForms[5]) $participle"
+    "1s" = "$($auxForms[0]) $participleSing"
+    "2s" = "$($auxForms[1]) $participleSing"
+    "3s" = "$($auxForms[2]) $participleSing"
+    "1p" = "$($auxForms[3]) $participlePlur"
+    "2p" = "$($auxForms[4]) $participlePlur"
+    "3p" = "$($auxForms[5]) $participlePlur"
   }
 
   return $result
@@ -180,11 +264,14 @@ $script:AUX_PRESENT = @{
 }
 
 $verbsOut = New-Object System.Collections.Generic.List[object]
+$rank = 0
 foreach ($infinitive in $verbList.Keys) {
+  $rank++
   $forms = Get-FormsFor $infinitive
   $verbsOut.Add([ordered]@{
     infinitive = $infinitive
     english = $verbList[$infinitive]
+    rank = $rank
     gerund = Get-PresentParticiple $infinitive
     participle = Get-Participle $infinitive
     forms = [ordered]@{ Indicatif = $forms }

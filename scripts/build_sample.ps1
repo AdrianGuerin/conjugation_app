@@ -14,7 +14,8 @@ $activeTenses = @("Presente",("Pret" + [char]0x00E9 + "rito"),"Imperfecto","Futu
 $full = Get-Content -Raw -Path $fullPath -Encoding UTF8 | ConvertFrom-Json
 
 $trimmed = New-Object System.Collections.Generic.List[object]
-foreach ($infinitive in $sample) {
+for ($i = 0; $i -lt $sample.Count; $i++) {
+  $infinitive = $sample[$i]
   $verb = $full.verbs | Where-Object { $_.infinitive -eq $infinitive }
   if (-not $verb) {
     Write-Warning "Not found in full dataset: $infinitive"
@@ -28,6 +29,7 @@ foreach ($infinitive in $sample) {
   $trimmed.Add([ordered]@{
     infinitive = $verb.infinitive
     english = $verb.english
+    rank = $i + 1
     gerund = $verb.gerund
     participle = $verb.participle
     forms = [ordered]@{ Indicativo = $trimmedForms }

@@ -2,6 +2,8 @@
 raw_verbs.csv
 raw_verbs_fr_list.json
 raw_verbs_fr_templates.json
+raw_verbs_it_list.xml
+raw_verbs_it_templates.xml
 
 # Local tooling config
 .claude/
