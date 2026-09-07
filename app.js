@@ -365,10 +365,12 @@ els.langSwitch.addEventListener("change", () => {
 els.verbListSize.addEventListener("change", () => {
   safeSet(TIER_KEY, els.verbListSize.value);
   applyTierSize();
-  // The current round's verb may not be in the new (possibly smaller) pool
-  // any more -- re-pick immediately rather than leaving an out-of-pool verb
-  // on screen until the round happens to finish naturally.
-  if (allVerbs.length) prepareRound();
+  // Only disrupt the current round if its verb actually fell out of the new
+  // (possibly smaller) pool. Expanding the pool (e.g. 20 -> 100) never
+  // invalidates the current selection, so it should stay exactly as-is --
+  // no reason to jump to a different verb just because more became available.
+  const verbStillValid = round && verbs.some((v) => v.infinitive === round.verb.infinitive);
+  if (allVerbs.length && !verbStillValid) prepareRound();
 });
 
 function initWithData(data) {
